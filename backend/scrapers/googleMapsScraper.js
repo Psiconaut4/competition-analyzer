@@ -80,7 +80,7 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
       await page.waitForTimeout(2000);
 
       // Buscar seletores em paralelo (mais rápido)
-      const selectors = ['[role="option"]', '.Nv2PK', '[data-item-id]', 'div[role="button"]'];
+      const selectors = ['[role="option"]', '.Nv2PK', '[data-item-id]', 'div[role="button"]', '.Uxe1t', 'div.ZdJRw'];
       let elementFound = false;
 
       try {
@@ -90,7 +90,7 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
         ]);
         if (elementFound) console.log('✓ Elementos encontrados');
       } catch {
-        // Continuar mesmo se não encontrar
+        console.log('⚠️ Nenhum seletor padrão encontrado - tentando extração genérica');
       }
 
       // Só faz scroll se realmente precisar (pula se conseguir 20+ itens)
@@ -126,6 +126,16 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
         throw new Error('Google recaptcha detected');
       }
 
+      // Debug: verificar se a página carregou corretamente
+      const pageTitle = await page.title();
+      const bodyLength = bodyText ? bodyText.length : 0;
+      console.log(`📄 Título da página: ${pageTitle}`);
+      console.log(`📊 Tamanho do conteúdo: ${bodyLength} caracteres`);
+
+      // Verificar se há itens visíveis
+      const visibleItems = await page.locator('[role="option"], .Nv2PK, [data-item-id], div[role="button"], .Uxe1t, .ZdJRw, div[data-index]').count().catch(() => 0);
+      console.log(`👁️ Itens visíveis encontrados: ${visibleItems}`);
+
       const competitorsData = await page.evaluate((maxItems) => {
         const results = [];
         const seenNames = new Set();
@@ -135,6 +145,14 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
         if (elements.length === 0) elements = document.querySelectorAll('[data-item-id]');
         if (elements.length === 0) elements = document.querySelectorAll('div[role="button"]');
         if (elements.length === 0) elements = document.querySelectorAll('.x8hlje0');
+        if (elements.length === 0) elements = document.querySelectorAll('.Uxe1t');
+        if (elements.length === 0) elements = document.querySelectorAll('div.ZdJRw');
+
+        // Fallback genérico: procurar por divs que contenham texto
+        if (elements.length === 0) {
+          const allDivs = document.querySelectorAll('div[data-index]');
+          if (allDivs.length > 0) elements = allDivs;
+        }
 
         console.log(`[MAPS DOM] Encontrados ${elements.length} elementos`);
 
@@ -220,6 +238,28 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
           }
         }
 
+        // Fallback: se ainda não temos resultados, tenta extrair de forma genérica
+        if (results.length === 0 && elements.length === 0) {
+          console.warn('[MAPS] Tentando fallback genérico...');
+          const allText = document.body.innerText;
+          const lines = allText.split('\n').filter(l => l.trim().length > 2 && l.trim().length < 100);
+
+          // Processa linhas que parecem ser nomes de empresas
+          for (let i = 0; i < Math.min(maxItems, lines.length); i++) {
+            const name = lines[i].trim();
+            if (!seenNames.has(name) && name.length > 1 && name.length < 100) {
+              seenNames.add(name);
+              results.push({
+                name,
+                rating: null,
+                reviews: null,
+                rawText: name,
+                mapsUrl: null
+              });
+            }
+          }
+        }
+
         return results.slice(0, maxItems);
       }, maxItems);
 
@@ -261,6 +301,11 @@ export async function scrapeGoogleMaps(keyword, city, options = {}) {
       await context.close();
       await browser.close();
       console.log(`⚠️ Nenhum dado foi encontrado no Google Maps\n`);
+      console.log(`🔍 Causas possíveis:`);
+      console.log(`   • Google bloqueou a requisição (recaptcha/IP ban)`);
+      console.log(`   • Seletores de DOM mudaram`);
+      console.log(`   • JavaScript não executou corretamente`);
+      console.log(`   • Resultados não carregaram (timeout)`);
       return [];
     } catch (err) {
       console.error(`❌ Erro na extração: ${err.message}`);

@@ -10,7 +10,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // 🏪 Endpoint para buscar leads/analisar concorrência
-export const LEADS_ENDPOINT = '/leads';
+export const LEADS_ENDPOINT = '/market/analyze';
 
 // 🔍 URL completa do endpoint (para requests diretos, se necessário)
 export const LEADS_URL = `${API_URL}${LEADS_ENDPOINT}`;

@@ -95,10 +95,10 @@ export default {
 
         const data = await response.json();
 
-        // Processar resposta com análise e concorrentes
-        if (data.analysis) {
-          this.analysis = data.analysis;
-          this.competitors = data.competitors || [];
+        // novo formato: { success, data }
+        if (data.success && data.data) {
+          this.analysis = data.data.analysis;
+          this.competitors = data.data.competitors || [];
         } else {
           this.error = 'Formato de resposta inválido';
         }

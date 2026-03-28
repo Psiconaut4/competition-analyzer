@@ -1,41 +1,62 @@
 // =============================
-// NORMALIZAR CONCORRENTE PARA ANÁLISE
+// NORMALIZAR CONCORRENTE
 // =============================
 
-export function normalizeCompetitor(data) {
-  // Validar e converter rating
-  let rating = 0;
-  if (data.rating !== null && data.rating !== undefined) {
-    rating = parseFloat(data.rating);
-    if (isNaN(rating)) rating = 0;
-    rating = Math.max(0, Math.min(5, rating));
-  }
-
-  // Validar e converter reviews
-  let reviews = 0;
-  if (data.reviews !== null && data.reviews !== undefined) {
-    reviews = typeof data.reviews === 'number' ? data.reviews : parseInt(data.reviews);
-    if (isNaN(reviews)) reviews = 0;
-    reviews = Math.max(0, reviews);
-  }
-
+export function normalizeCompetitor(data = {}) {
   return {
-    id: data.id || null,
-    name: data.name || 'N/A',
-    rating: parseFloat(rating.toFixed(1)),
-    reviews: reviews,
-    address: data.address || 'N/A',
-    phone: data.phone || null,
-    website: data.website || null,
+    id: data.id ?? null,
+
+    name: normalizeString(data.name),
+
+    rating: normalizeRating(data.rating),
+
+    reviews: normalizeInteger(data.reviews),
+
+    address: normalizeString(data.address),
+
+    phone: normalizeString(data.phone),
+
+    website: normalizeString(data.website),
+
     hasWebsite: !!data.website,
-    mapsUrl: data.mapsUrl || null,
-    establishedYears: data.establishedYears || null,
-    weeklyViews: data.weeklyViews || 0,
-    source: data.source || 'unknown'
+
+    mapsUrl: normalizeString(data.mapsUrl),
+
+    source: data.source || 'google-maps'
   };
 }
 
-// Mantém função antiga para compatibilidade
+// =============================
+// HELPERS
+// =============================
+
+function normalizeString(value) {
+  if (!value || typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeRating(value) {
+  const num = Number(value);
+
+  if (isNaN(num)) return null;
+
+  return Math.max(0, Math.min(5, Number(num.toFixed(1))));
+}
+
+function normalizeInteger(value) {
+  const num = Number(value);
+
+  if (isNaN(num)) return null;
+
+  return Math.max(0, Math.floor(num));
+}
+
+// =============================
+// LEGACY COMPAT
+// =============================
+
 export function normalizeLead(data) {
   return normalizeCompetitor(data);
 }

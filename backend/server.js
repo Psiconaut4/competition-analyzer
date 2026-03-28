@@ -1,40 +1,71 @@
-// Carregar variáveis de ambiente PRIMEIRO (antes de qualquer outra coisa)
+// =============================
+// ⚙️ BOOTSTRAP
+// =============================
+
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Depois importar o resto
 import express from 'express';
 import cors from 'cors';
-import leadRoutes from './routes/leads.js';
+
+import marketRoutes from './routes/market.routes.js';
 
 const app = express();
 
-// 🔐 CORS - Configurado por variáveis de ambiente
-const corsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+// =============================
+// 🔐 CORS
+// =============================
 
-console.log(`🔒 CORS Origins Permitidas:`, corsOrigins);
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({
-  origin: corsOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: (origin, callback) => {
+    // permite requests sem origin (Postman, curl)
+    if (!origin) return callback(null, true);
+
+    if (corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
 }));
+
+// =============================
+// MIDDLEWARES
+// =============================
 
 app.use(express.json());
 
-app.use('/leads', leadRoutes);
-app.use('/health', (req, res) => {
-  res.json({ status: 'ok' });
+// =============================
+// ROUTES
+// =============================
+
+app.use('/market', marketRoutes);
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'api',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// ⚙️ Configurações do servidor
+// =============================
+// SERVER START
+// =============================
+
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// ⚠️ importante: não fixar localhost em produção
+const HOST = process.env.NODE_ENV === 'production'
+  ? '0.0.0.0'
+  : 'localhost';
 
 app.listen(PORT, HOST, () => {
-  console.log(`\n✅ API ${NODE_ENV.toUpperCase()} rodando em http://${HOST}:${PORT}\n`);
+  console.log(`\n✅ API rodando em http://${HOST}:${PORT}`);
+  console.log(`🌎 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

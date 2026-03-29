@@ -18,11 +18,11 @@ export async function extractCompetitors(page, elements, maxItems, city) {
 
       seen.add(name);
 
-      // 👉 CLICA NA EMPRESA
+      //  CLICA NA EMPRESA
       await el.click().catch(() => {});
       await page.waitForTimeout(1500);
 
-      // 👉 EXTRAI WEBSITE REAL DO CARTÃO
+      //  EXTRAI WEBSITE REAL DO CARTÃO
       let website = null;
       try {
         const btn = await page.$(DETAIL_SELECTORS.websiteButton);
@@ -39,7 +39,7 @@ export async function extractCompetitors(page, elements, maxItems, city) {
         reviews: extractReviews(text),
         address: `${city}, Brasil`,
         website,
-        mapsUrl: page.url(),
+        mapsUrl,
         source: 'google-maps-real'
       });
 

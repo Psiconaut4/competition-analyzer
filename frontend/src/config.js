@@ -25,7 +25,7 @@ export const IS_PROD = import.meta.env.PROD;
 export const ENV = import.meta.env.MODE; // 'development' ou 'production'
 
 // 📋 Dados da aplicação
-export const APP_NAME = 'Lead Finder';
+export const APP_NAME = 'Competition Analyzer';
 export const APP_VERSION = '1.0.0';
 export const APP_DESCRIPTION = 'Analisador inteligente de concorrência de negócios';
 

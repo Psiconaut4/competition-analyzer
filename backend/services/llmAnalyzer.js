@@ -68,12 +68,16 @@ function buildPrompt(keyword, city, competitors) {
 
   const systemPrompt = `
 Você é um especialista em análise de mercado.
-Seja direto, realista e baseado nos dados.
-Responda em português do Brasil.
+Seja direto, realista, pragmático, objetivo e baseado nos dados.
+Use os dados de concorrência para fundamentar sua análise.
+Seja crítico e destaque tanto os desafios quanto as oportunidades.
 `;
 
   const userPrompt = `
-Analise a viabilidade de abrir um negócio de "${keyword}" em "${city}".
+Analise a viabilidade de abrir um negócio de "${keyword}" em "${city}" com base nos concorrentes listados.
+preencha as seções de forma clara e estruturada não deixe nenhuma seção vazia ou com simbolos de preenchimento.
+não faça listas indo de a a c, prefira somente o texto
+Responda em português do Brasil.
 
 Concorrentes:
 ${competitorsSummary}
@@ -84,8 +88,8 @@ Reviews médio: ${avgReviews ?? 'N/A'}
 
 Estruture:
 1. Viabilidade (0-100%)
-2. Desafios (3-4)
-3. Oportunidades (3-4)
+2. Desafios (4)
+3. Oportunidades (4)
 4. Recomendação
 5. Próximos passos
 `;
@@ -170,7 +174,7 @@ function calculateAvg(list, field) {
 
 function extractPercentage(text) {
   const match = text.match(/(\d{1,3})\s*%/);
-  return match ? parseInt(match[1]) : null;
+  return match ? parseInt(match[1]) : 0;
 }
 
 function extractList(text, regex) {
@@ -179,8 +183,19 @@ function extractList(text, regex) {
 
   return section
     .split('\n')
-    .map(l => l.replace(/^[-•*\d.]\s*/, '').trim())
-    .filter(Boolean)
+    .map(l => l
+      .replace(/^[a-z]\.\s+/i, '')     // Remove "a. b. c. d." com ponto
+      .replace(/^[a-z]\)\s*/i, '')     // Remove "a) b) c)" com parêntese
+      .replace(/^[-•*\d.]+\s*/, '')    // Remove "1. 2. 3." ou "-"
+      .trim()
+    )
+    .filter(l => {
+      // Remove vazios, linhas com só pontuação, e cabeçalhos
+      const isHeader = /^(desafios|oportunidades|recomendação|próximos?\s+passos|next\s+steps|challenges|opportunities)[\s:]*$/i.test(l);
+      const isEmpty = !l || l.length < 3;
+      const isPunctuation = /^[.,;:\-•*]+$/.test(l);
+      return !isHeader && !isEmpty && !isPunctuation;
+    })
     .slice(0, 5);
 }
 

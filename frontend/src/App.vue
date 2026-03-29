@@ -12,7 +12,7 @@
 
       <div v-if="analysis && !loading" class="analysis-content">
         <!-- Card de Viabilidade -->
-        <ViabilityCard :score="analysis.viablityScore" :recommendation="analysis.recommendation"
+        <ViabilityCard :score="analysis.viabilityScore" :recommendation="analysis.recommendation"
           :competitors="analysis.competitorsAnalyzed" :rating="analysis.avgRating" :insight="analysis.insights" />
 
         <!-- Desafios e Oportunidades -->
